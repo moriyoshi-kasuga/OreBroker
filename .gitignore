@@ -12,3 +12,4 @@ run
 .project
 bin/
 .settings/
+.factorypath

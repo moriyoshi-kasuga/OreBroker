@@ -1,0 +1,14 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Generate folder by xyz.jpenilla.run-paper
+run
+
+# Added by User
+.classpath
+.project
+bin/
+.settings/

@@ -13,18 +13,6 @@ import lombok.val;
 import java.security.SecureRandom;
 import java.util.*;
 
-/**
- * 市場エンジン（2秒ごと更新）
- * - 平均回帰 + ノイズ（正規乱数） + ジャンプ（上下）
- * - 天変地異（倍率）/ 石炭の革命（多倍化・売買CD）
- * - 売買手数料 / 価格インパクト / プレイヤー別クールダウン
- * - レッドストーンの停滞⇔活発モード
- *
- * 使い方：
- * MarketEngine.init(plugin);
- * MarketEngine.buyOre(player, Ore.DIAMOND, 1);
- * MarketEngine.sellOre(player, Ore.DIAMOND, 1);
- */
 public final class MarketEngine {
 
     // ===== 公開API =====
@@ -51,6 +39,31 @@ public final class MarketEngine {
         for (var e : INSTANCE.stateMap.entrySet())
             map.put(e.getKey(), e.getValue().price);
         return map;
+    }
+
+    // --- お金/インベントリAPI ---
+    public static boolean takeMoney(Player p, long amount) {
+        return Money.take(p, amount);
+    }
+
+    public static void giveMoney(Player p, long amount) {
+        Money.give(p, amount);
+    }
+
+    public static void setMoney(Player p, long amount) {
+        Money.set(p, amount);
+    }
+
+    public static long getMoney(Player p) {
+        return Money.get(p);
+    }
+
+    public static int countItems(Player p, Material m) {
+        return InvUtil.count(p, m);
+    }
+
+    public static void removeItems(Player p, Material m, int qty) {
+        InvUtil.remove(p, m, qty);
     }
 
     // ===== 実装 =====
@@ -294,82 +307,55 @@ public final class MarketEngine {
     }
 
     public enum Ore {
-        // 全体レンジ [pMin, pMax] / 平均帯中心 mu / 平均回帰 kappa / 基本σ
-        // ジャンプ確率と幅（上下）/ 特殊パラメータ
-        DIAMOND("ダイヤ", Material.DIAMOND, 250, 900, 625, 0.25, 45,
-                0.00, 0, 0,
-                0.025, 120, 260,
-                0.0),
-        EMERALD("エメラルド", Material.EMERALD, 150, 750, 625, 0.30, 35,
-                0.00, 0, 0,
-                0.010, 80, 160,
-                0.0),
-        AMETHYST("アメジスト", Material.AMETHYST_SHARD, 10, 600, 305, 0.05, 65,
-                0.040, 80, 150,
-                0.040, 80, 150,
-                0.0),
-        LAPIS("ラピス", Material.LAPIS_LAZULI, 50, 500, 225, 0.40, 30,
-                0.030, 70, 130,
-                0.030, 70, 130,
-                0.0),
-        REDSTONE("レッドストーン", Material.REDSTONE, 25, 500, 200, 0.30, 40, // sigmaは通常モードの値
-                0.050, 60, 120,
-                0.050, 60, 120,
-                0.0),
-        GOLD("金", Material.GOLD_INGOT, 45, 200, 88, 0.35, 18,
-                0.030, 18, 35,
-                0.030, 18, 35,
-                0.0),
-        IRON("鉄", Material.IRON_INGOT, 25, 100, 48, 0.40, 10,
-                0.00, 0, 0,
-                0.00, 0, 0,
-                0.0),
-        COPPER("銅", Material.COPPER_INGOT, 10, 75, 35, 0.35, 12,
-                0.00, 0, 0,
-                0.00, 0, 0,
-                0.0),
-        COAL("石炭", Material.COAL, 5, 100, 30, 0.30, 14,
-                0.00, 0, 0,
-                0.00, 0, 0,
-                0.0004); // 革命確率（Tickあたり）
+        DIAMOND("ダイヤ", Material.DIAMOND, 250, 900, 625, 0.25, 45, 0.00, 0, 0, 0.025, 120, 260, 0.0),
+        EMERALD("エメラルド", Material.EMERALD, 150, 750, 625, 0.30, 35, 0.00, 0, 0, 0.010, 80, 160, 0.0),
+        AMETHYST("アメジスト", Material.AMETHYST_SHARD, 10, 600, 305, 0.05, 65, 0.040, 80, 150, 0.040, 80, 150, 0.0),
+        LAPIS("ラピス", Material.LAPIS_LAZULI, 50, 500, 225, 0.40, 30, 0.030, 70, 130, 0.030, 70, 130, 0.0),
+        REDSTONE("レッドストーン", Material.REDSTONE, 25, 500, 200, 0.30, 40, 0.050, 60, 120, 0.050, 60, 120, 0.0),
+        GOLD("金", Material.GOLD_INGOT, 45, 200, 88, 0.35, 18, 0.030, 18, 35, 0.030, 18, 35, 0.0),
+        IRON("鉄", Material.IRON_INGOT, 25, 100, 48, 0.40, 10, 0.00, 0, 0, 0.00, 0, 0, 0.0),
+        COPPER("銅", Material.COPPER_INGOT, 10, 75, 35, 0.35, 12, 0.00, 0, 0, 0.00, 0, 0, 0.0),
+        COAL("石炭", Material.COAL, 5, 100, 30, 0.30, 14, 0.00, 0, 0, 0.00, 0, 0, 0.0004); // 革命確率（Tickあたり）
 
         public final String display;
         public final Material material;
         public final int pMin, pMax;
-        public final int avgMin, avgMax; // 平均帯はここでは pMin/pMax とは別に保持したい場合に使う。今回は mu を直接指定。
+        public final int avgMin, avgMax;
         public final int mu;
         public final double kappa;
         public final double sigma;
-
-        public final double pJumpUp;
-        public final int jumpUpMin, jumpUpMax;
-        public final double pJumpDown;
-        public final int jumpDnMin, jumpDnMax;
-
+        public final double pJumpUp, pJumpDown;
+        public final int jumpUpMin, jumpUpMax, jumpDnMin, jumpDnMax;
         public final double pRevolution; // 石炭専用
 
-        // 簡略化のため avgMin/avgMax は mu±帯の管理をやめ、サンプル時のみ別関数で決定している
+        private static final Map<Material, Ore> MATERIAL_MAP = new HashMap<>();
+
+        static {
+            for (Ore ore : values()) {
+                MATERIAL_MAP.put(ore.material, ore);
+                // Deepslate variants
+                switch (ore.material) {
+                    case COAL: MATERIAL_MAP.put(Material.DEEPSLATE_COAL_ORE, ore); break;
+                    case COPPER_INGOT: MATERIAL_MAP.put(Material.DEEPSLATE_COPPER_ORE, ore); break;
+                    case IRON_INGOT: MATERIAL_MAP.put(Material.DEEPSLATE_IRON_ORE, ore); break;
+                    case GOLD_INGOT: MATERIAL_MAP.put(Material.DEEPSLATE_GOLD_ORE, ore); break;
+                    case REDSTONE: MATERIAL_MAP.put(Material.DEEPSLATE_REDSTONE_ORE, ore); break;
+                    case LAPIS_LAZULI: MATERIAL_MAP.put(Material.DEEPSLATE_LAPIS_ORE, ore); break;
+                    case DIAMOND: MATERIAL_MAP.put(Material.DEEPSLATE_DIAMOND_ORE, ore); break;
+                    case EMERALD: MATERIAL_MAP.put(Material.DEEPSLATE_EMERALD_ORE, ore); break;
+                    default: break;
+                }
+            }
+        }
+
         Ore(String display, Material material, int pMin, int pMax, int mu, double kappa, double sigma,
-                double pJumpUp, int jumpUpMin, int jumpUpMax,
-                double pJumpDown, int jumpDnMin, int jumpDnMax,
-                double pRevolution) {
-
-            this.display = display;
-            this.material = material;
-            this.pMin = pMin;
-            this.pMax = pMax;
-            this.mu = mu;
-            this.kappa = kappa;
-            this.sigma = sigma;
-            this.pJumpUp = pJumpUp;
-            this.jumpUpMin = jumpUpMin;
-            this.jumpUpMax = jumpUpMax;
-            this.pJumpDown = pJumpDown;
-            this.jumpDnMin = jumpDnMin;
-            this.jumpDnMax = jumpDnMax;
+            double pJumpUp, int jumpUpMin, int jumpUpMax,
+            double pJumpDown, int jumpDnMin, int jumpDnMax,
+            double pRevolution) {
+            this.display = display; this.material = material; this.pMin = pMin; this.pMax = pMax; this.mu = mu;
+            this.kappa = kappa; this.sigma = sigma; this.pJumpUp = pJumpUp; this.jumpUpMin = jumpUpMin;
+            this.jumpUpMax = jumpUpMax; this.pJumpDown = pJumpDown; this.jumpDnMin = jumpDnMin; this.jumpDnMax = jumpDnMax;
             this.pRevolution = pRevolution;
-
-            // 便宜的：平均帯の表示用に、μの周りに幅を仮置き
             int span = Math.max(10, (pMax - pMin) / 4);
             this.avgMin = Math.max(pMin, mu - span);
             this.avgMax = Math.min(pMax, mu + span);
@@ -381,14 +367,15 @@ public final class MarketEngine {
             return item;
         }
 
-        // GUI用に現在価格レンジ比を返すなどの拡張も可
+        public static Optional<Ore> fromMaterial(Material material) {
+            return Optional.ofNullable(MATERIAL_MAP.get(material));
+        }
     }
 
     // ====== ユーティリティ群 ======
 
     private int sampleUniform(int a, int b) {
-        if (a >= b)
-            return a;
+        if (a >= b) return a;
         return a + rng.nextInt(b - a + 1);
     }
 
@@ -396,7 +383,6 @@ public final class MarketEngine {
         return a + rng.nextDouble() * (b - a);
     }
 
-    // Box-Muller法で正規乱数
     private double gaussian(double mean, double stddev) {
         double u1 = Math.max(1e-9, rng.nextDouble());
         double u2 = rng.nextDouble();
@@ -418,16 +404,19 @@ public final class MarketEngine {
     }
 
     // ====== お金＆インベントリのダミー ======
-    // 実案件では、ここをVault等に差し替えてください。
 
     private static final class Money {
         private static final Map<UUID, Long> BAL = new HashMap<>();
         private static final long START = 1000L;
 
+        static void set(Player p, long amount) {
+            BAL.put(p.getUniqueId(), amount);
+            checkMilestones(p, amount);
+        }
+
         static boolean take(Player p, long amount) {
             long cur = BAL.getOrDefault(p.getUniqueId(), START);
-            if (cur < amount)
-                return false;
+            if (cur < amount) return false;
             BAL.put(p.getUniqueId(), cur - amount);
             checkMilestones(p, cur - amount);
             return true;
@@ -461,8 +450,7 @@ public final class MarketEngine {
         static int count(Player p, Material m) {
             int total = 0;
             for (var it : p.getInventory().getContents()) {
-                if (it != null && it.getType() == m)
-                    total += it.getAmount();
+                if (it != null && it.getType() == m) total += it.getAmount();
             }
             return total;
         }
@@ -472,15 +460,12 @@ public final class MarketEngine {
             var inv = p.getInventory();
             for (int i = 0; i < inv.getSize(); i++) {
                 var it = inv.getItem(i);
-                if (it == null || it.getType() != m)
-                    continue;
+                if (it == null || it.getType() != m) continue;
                 int take = Math.min(need, it.getAmount());
                 it.setAmount(it.getAmount() - take);
-                if (it.getAmount() <= 0)
-                    inv.clear(i);
+                if (it.getAmount() <= 0) inv.clear(i);
                 need -= take;
-                if (need <= 0)
-                    break;
+                if (need <= 0) break;
             }
         }
     }

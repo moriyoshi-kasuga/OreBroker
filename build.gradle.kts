@@ -17,8 +17,16 @@ repositories {
   }
 }
 
+val lombok = "org.projectlombok:lombok:1.18.38"
+
 dependencies {
   compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+
+  compileOnly(lombok)
+  annotationProcessor(lombok)
+
+  testCompileOnly(lombok)
+  testAnnotationProcessor(lombok)
 }
 
 tasks.withType<JavaCompile> {

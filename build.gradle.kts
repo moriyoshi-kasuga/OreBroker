@@ -36,6 +36,7 @@ dependencies {
 
 tasks.shadowJar {
   archiveVersion = ""
+  archiveClassifier = ""
   relocate("fr.mrmicky.fastboard", "github.moriyoshi.orebroker.lib.fastboard")
 }
 

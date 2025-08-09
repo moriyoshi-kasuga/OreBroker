@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import net.kyori.adventure.text.Component;
@@ -50,6 +51,10 @@ public final class BukkitUtil {
 
     public static void broadcast(final Object... messages) {
         Bukkit.broadcast(mmConcat(messages));
+    }
+
+    public static void send(Player player, final Object... messages) {
+        player.sendMessage(mmConcat(messages));
     }
 
     public static void debug(final Object... messages) {

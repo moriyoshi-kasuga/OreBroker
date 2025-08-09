@@ -1,13 +1,12 @@
 package github.moriyoshi.orebroker.lib;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import github.moriyoshi.orebroker.util.BukkitUtil;
 import lombok.val;
 
 import java.security.SecureRandom;
@@ -143,7 +142,7 @@ public final class MarketEngine {
                 double cap = Math.min(st.ore.pMax, Math.floor(st.price * 5.0));
                 pNew = Math.min(pNew * mult, cap);
                 // 3秒間は石炭売買CD（通知）
-                broadcast(ChatColor.DARK_GRAY + "【革命】 " + ChatColor.GRAY + "石炭の価格が革命的高騰！売買に短時間のクールダウンが入ります。");
+                BukkitUtil.broadcast("<dark_gray>【革命】 <gray>石炭の価格が革命的高騰！売買に短時間のクールダウンが入ります。");
                 st.addExtraCooldownForAll(SELL_CD_ON_COAL_REVOLUTION);
             }
 
@@ -164,7 +163,7 @@ public final class MarketEngine {
             if (disasterTicksLeft <= 0) {
                 disasterActive = false;
                 disasterTargets.clear();
-                broadcast(ChatColor.YELLOW + "天変地異の影響が収まりました。");
+                BukkitUtil.broadcast("<yellow>天変地異の影響が収まりました。</yellow>");
             }
             return;
         }
@@ -184,8 +183,8 @@ public final class MarketEngine {
                 disasterTargets.add(list.get(0));
                 disasterTargets.add(list.get(1));
             }
-            broadcast(ChatColor.GOLD + "【天変地異】" + ChatColor.WHITE + " 市場全体に激震！倍率: "
-                    + String.format(Locale.JAPAN, "%.2f", disasterMultiplier));
+            BukkitUtil.broadcast(
+                    "<gold>【天変地異】<white> 市場全体に激震！倍率: " + String.format(Locale.JAPAN, "%.2f", disasterMultiplier));
         }
     }
 
@@ -196,14 +195,14 @@ public final class MarketEngine {
             return;
         PriceState st = stateMap.get(ore);
         if (!st.canTrade(p)) {
-            send(p, ChatColor.RED + "クールダウン中です。少し待ってから取引してください。");
+            BukkitUtil.send(p, "<red>クールダウン中です。少し待ってから取引してください。</red>");
             return;
         }
 
         int price = st.price;
         long cost = (long) price * qty;
         if (!Money.take(p, cost)) { // 所持金不足
-            send(p, ChatColor.RED + "所持金が足りません。必要: " + cost + "G");
+            BukkitUtil.send(p, "<red>所持金が足りません。必要: " + cost + "G</red>");
             return;
         }
 
@@ -215,7 +214,7 @@ public final class MarketEngine {
         st.price = Math.min(st.ore.pMax, st.price + impact);
 
         st.setCooldown(p, TRADE_COOLDOWN_TICKS);
-        send(p, ChatColor.AQUA + "購入: " + ore.display + " ×" + qty + " @" + price + "G  (計 " + cost + "G)");
+        BukkitUtil.send(p, "<aqua>購入: " + ore.display + " ×" + qty + " @" + price + "G  (計 " + cost + "G)</aqua>");
     }
 
     private void handleSell(Player p, Ore ore, int qty) {
@@ -223,13 +222,13 @@ public final class MarketEngine {
             return;
         PriceState st = stateMap.get(ore);
         if (!st.canTrade(p)) {
-            send(p, ChatColor.RED + "クールダウン中です。少し待ってから取引してください。");
+            BukkitUtil.send(p, "<red>クールダウン中です。少し待ってから取引してください。</red>");
             return;
         }
         // インベントリ確認
         int invCount = InvUtil.count(p, ore.material);
         if (invCount < qty) {
-            send(p, ChatColor.RED + "売却数が手持ち数を超えています。所持: " + invCount);
+            BukkitUtil.send(p, "<red>売却数が手持ち数を超えています。所持: " + invCount + "</red>");
             return;
         }
         InvUtil.remove(p, ore.material, qty);
@@ -244,8 +243,8 @@ public final class MarketEngine {
         st.price = Math.max(st.ore.pMin, st.price - drop);
 
         st.setCooldown(p, TRADE_COOLDOWN_TICKS);
-        send(p, ChatColor.GREEN + "売却: " + ore.display + " ×" + qty + " @" + price + "G  手取り " + net + "G（手数料"
-                + (int) (FEE * 100) + "%）");
+        BukkitUtil.send(p, "<green>売却: " + ore.display + " ×" + qty + " @" + price + "G  手取り " + net + "G（手数料"
+                + (int) (FEE * 100) + "%）</green>");
     }
 
     // ====== 内部クラス/ユーティリティ ======
@@ -291,13 +290,13 @@ public final class MarketEngine {
         }
 
         boolean canTrade(Player p) {
-            long now = Bukkit.getCurrentTick();
+            long now = p.getWorld().getFullTime();
             long base = nextTradableTick.getOrDefault(p.getUniqueId(), 0L);
             return now >= base + globalExtraCooldownTicks;
         }
 
         void setCooldown(Player p, long cdTicks) {
-            long now = Bukkit.getCurrentTick();
+            long now = p.getWorld().getFullTime();
             nextTradableTick.put(p.getUniqueId(), now + cdTicks);
         }
 
@@ -335,26 +334,53 @@ public final class MarketEngine {
                 MATERIAL_MAP.put(ore.material, ore);
                 // Deepslate variants
                 switch (ore.material) {
-                    case COAL: MATERIAL_MAP.put(Material.DEEPSLATE_COAL_ORE, ore); break;
-                    case COPPER_INGOT: MATERIAL_MAP.put(Material.DEEPSLATE_COPPER_ORE, ore); break;
-                    case IRON_INGOT: MATERIAL_MAP.put(Material.DEEPSLATE_IRON_ORE, ore); break;
-                    case GOLD_INGOT: MATERIAL_MAP.put(Material.DEEPSLATE_GOLD_ORE, ore); break;
-                    case REDSTONE: MATERIAL_MAP.put(Material.DEEPSLATE_REDSTONE_ORE, ore); break;
-                    case LAPIS_LAZULI: MATERIAL_MAP.put(Material.DEEPSLATE_LAPIS_ORE, ore); break;
-                    case DIAMOND: MATERIAL_MAP.put(Material.DEEPSLATE_DIAMOND_ORE, ore); break;
-                    case EMERALD: MATERIAL_MAP.put(Material.DEEPSLATE_EMERALD_ORE, ore); break;
-                    default: break;
+                    case COAL:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_COAL_ORE, ore);
+                        break;
+                    case COPPER_INGOT:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_COPPER_ORE, ore);
+                        break;
+                    case IRON_INGOT:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_IRON_ORE, ore);
+                        break;
+                    case GOLD_INGOT:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_GOLD_ORE, ore);
+                        break;
+                    case REDSTONE:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_REDSTONE_ORE, ore);
+                        break;
+                    case LAPIS_LAZULI:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_LAPIS_ORE, ore);
+                        break;
+                    case DIAMOND:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_DIAMOND_ORE, ore);
+                        break;
+                    case EMERALD:
+                        MATERIAL_MAP.put(Material.DEEPSLATE_EMERALD_ORE, ore);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
 
         Ore(String display, Material material, int pMin, int pMax, int mu, double kappa, double sigma,
-            double pJumpUp, int jumpUpMin, int jumpUpMax,
-            double pJumpDown, int jumpDnMin, int jumpDnMax,
-            double pRevolution) {
-            this.display = display; this.material = material; this.pMin = pMin; this.pMax = pMax; this.mu = mu;
-            this.kappa = kappa; this.sigma = sigma; this.pJumpUp = pJumpUp; this.jumpUpMin = jumpUpMin;
-            this.jumpUpMax = jumpUpMax; this.pJumpDown = pJumpDown; this.jumpDnMin = jumpDnMin; this.jumpDnMax = jumpDnMax;
+                double pJumpUp, int jumpUpMin, int jumpUpMax,
+                double pJumpDown, int jumpDnMin, int jumpDnMax,
+                double pRevolution) {
+            this.display = display;
+            this.material = material;
+            this.pMin = pMin;
+            this.pMax = pMax;
+            this.mu = mu;
+            this.kappa = kappa;
+            this.sigma = sigma;
+            this.pJumpUp = pJumpUp;
+            this.jumpUpMin = jumpUpMin;
+            this.jumpUpMax = jumpUpMax;
+            this.pJumpDown = pJumpDown;
+            this.jumpDnMin = jumpDnMin;
+            this.jumpDnMax = jumpDnMax;
             this.pRevolution = pRevolution;
             int span = Math.max(10, (pMax - pMin) / 4);
             this.avgMin = Math.max(pMin, mu - span);
@@ -375,7 +401,8 @@ public final class MarketEngine {
     // ====== ユーティリティ群 ======
 
     private int sampleUniform(int a, int b) {
-        if (a >= b) return a;
+        if (a >= b)
+            return a;
         return a + rng.nextInt(b - a + 1);
     }
 
@@ -394,15 +421,6 @@ public final class MarketEngine {
         return Math.max(lo, Math.min(hi, v));
     }
 
-    private static void broadcast(String msg) {
-        Bukkit.getServer().getOnlinePlayers().forEach(p -> p.sendMessage(msg));
-        Bukkit.getConsoleSender().sendMessage(ChatColor.stripColor(msg));
-    }
-
-    private static void send(Player p, String msg) {
-        p.sendMessage(msg);
-    }
-
     // ====== お金＆インベントリのダミー ======
 
     private static final class Money {
@@ -416,7 +434,8 @@ public final class MarketEngine {
 
         static boolean take(Player p, long amount) {
             long cur = BAL.getOrDefault(p.getUniqueId(), START);
-            if (cur < amount) return false;
+            if (cur < amount)
+                return false;
             BAL.put(p.getUniqueId(), cur - amount);
             checkMilestones(p, cur - amount);
             return true;
@@ -437,11 +456,11 @@ public final class MarketEngine {
 
         private static void checkMilestones(Player p, long bal) {
             if (bal >= 10000L) {
-                broadcast(ChatColor.LIGHT_PURPLE + p.getName() + " が 10000G に到達！勝者です！");
+                BukkitUtil.broadcast("<light_purple>" + p.getName() + " が 10000G に到達！勝者です！");
                 // ここでゲーム終了処理へフック
             } else if (bal >= 5000L && !announced5000.contains(p.getUniqueId())) {
                 announced5000.add(p.getUniqueId());
-                broadcast(ChatColor.AQUA + p.getName() + " が 5000G に初到達！");
+                BukkitUtil.broadcast("<aqua>" + p.getName() + " が 5000G に初到達！");
             }
         }
     }
@@ -450,7 +469,8 @@ public final class MarketEngine {
         static int count(Player p, Material m) {
             int total = 0;
             for (var it : p.getInventory().getContents()) {
-                if (it != null && it.getType() == m) total += it.getAmount();
+                if (it != null && it.getType() == m)
+                    total += it.getAmount();
             }
             return total;
         }
@@ -460,12 +480,15 @@ public final class MarketEngine {
             var inv = p.getInventory();
             for (int i = 0; i < inv.getSize(); i++) {
                 var it = inv.getItem(i);
-                if (it == null || it.getType() != m) continue;
+                if (it == null || it.getType() != m)
+                    continue;
                 int take = Math.min(need, it.getAmount());
                 it.setAmount(it.getAmount() - take);
-                if (it.getAmount() <= 0) inv.clear(i);
+                if (it.getAmount() <= 0)
+                    inv.clear(i);
                 need -= take;
-                if (need <= 0) break;
+                if (need <= 0)
+                    break;
             }
         }
     }

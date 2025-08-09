@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,10 +14,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import fr.mrmicky.fastboard.FastBoard;
+import fr.mrmicky.fastboard.adventure.FastBoard;
 import github.moriyoshi.orebroker.OreBroker;
-import github.moriyoshi.orebroker.lib.MarketEngine.Ore;
+import github.moriyoshi.orebroker.util.BukkitUtil;
 import lombok.val;
+import net.kyori.adventure.text.Component;
 
 public class ScoreboardManager implements Listener {
     private static ScoreboardManager instance;
@@ -47,7 +47,7 @@ public class ScoreboardManager implements Listener {
                 }
             }
         };
-        this.runnable.runTaskTimer(OreBroker.getInstance(), 0L, 20L); // 1秒ごとに更新
+        this.runnable.runTaskTimer(OreBroker.getInstance(), 0L, 20L);
     }
 
     public void stop() {
@@ -64,7 +64,7 @@ public class ScoreboardManager implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         FastBoard board = new FastBoard(player);
-        board.updateTitle(ChatColor.GOLD + "OreBroker");
+        board.updateTitle(BukkitUtil.mm("<gold><bold>OreBroker</bold>"));
         boards.put(player.getUniqueId(), board);
     }
 
@@ -79,30 +79,31 @@ public class ScoreboardManager implements Listener {
 
     private void updateBoard(FastBoard board) {
         Player player = board.getPlayer();
-        List<String> lines = new ArrayList<>();
+        List<Component> lines = new ArrayList<>();
 
         if (!gameManager.isGameRunning() || !gameManager.isPlayerInGame(player)) {
-            lines.add("");
-            lines.add(ChatColor.WHITE + "ゲーム開始待機中...");
-            lines.add("");
-            lines.add(ChatColor.GRAY + "moriyoshi.github");
+            lines.add(Component.empty());
+            lines.add(BukkitUtil.mm("<white>ゲーム開始待機中..."));
+            lines.add(Component.empty());
         } else {
             long balance = MarketEngine.getMoney(player);
 
-            lines.add(ChatColor.GRAY + "所持金:");
-            lines.add("  " + ChatColor.GREEN + String.format("%,d", balance) + " G");
-            lines.add(" ");
-            lines.add(ChatColor.GRAY + "価格情報:");
-            for (val ore : Ore.values()) {
+            lines.add(BukkitUtil.mm("<gray>所持金:"));
+            lines.add(BukkitUtil.mm("  <green>" + String.format("%,d", balance) + " G"));
+            lines.add(Component.empty());
+            lines.add(BukkitUtil.mm("<gray>価格情報:"));
+
+            for (val ore : MarketEngine.Ore.values()) {
                 lines.add(formatOrePrice(ore, MarketEngine.getPrice(ore)));
             }
-            lines.add("  ");
+
+            lines.add(Component.empty());
         }
 
         board.updateLines(lines);
     }
 
-    private String formatOrePrice(MarketEngine.Ore ore, int price) {
-        return "  " + ChatColor.WHITE + ore.display + ": " + ChatColor.YELLOW + price + " G";
+    private Component formatOrePrice(MarketEngine.Ore ore, int price) {
+        return BukkitUtil.mm("  <white>" + ore.display + ": <yellow>" + price + " G");
     }
 }

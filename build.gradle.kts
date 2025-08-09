@@ -4,6 +4,7 @@ import org.gradle.internal.os.OperatingSystem
 plugins {
   java
   id("xyz.jpenilla.run-paper") version "2.3.1"
+  id("com.gradleup.shadow") version "8.3.0"
 }
 
 java {
@@ -17,8 +18,26 @@ repositories {
   }
 }
 
+val lombok = "org.projectlombok:lombok:1.18.38"
+val fastboard = "fr.mrmicky:fastboard:2.1.5"
+
 dependencies {
   compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+
+  implementation(fastboard)
+  shadow(fastboard)
+
+  compileOnly(lombok)
+  annotationProcessor(lombok)
+
+  testCompileOnly(lombok)
+  testAnnotationProcessor(lombok)
+}
+
+tasks.shadowJar {
+  archiveVersion = ""
+  archiveClassifier = ""
+  relocate("fr.mrmicky.fastboard", "github.moriyoshi.orebroker.lib.fastboard")
 }
 
 tasks.withType<JavaCompile> {
@@ -46,12 +65,12 @@ interface FsInjected {
 }
 
 tasks.register("movePlugin") {
-  dependsOn("build")
+  dependsOn("shadowJar")
   val injected = project.objects.newInstance<FsInjected>()
   doLast {
-    injected.fs.delete { delete("run/plugins/SurvivalShooter.jar") }
+    injected.fs.delete { delete("run/plugins/OreBroker.jar") }
     injected.fs.copy {
-      from("build/libs/SurvivalShooter.jar")
+      from("build/libs/OreBroker.jar")
       into("run/plugins")
     }
   }

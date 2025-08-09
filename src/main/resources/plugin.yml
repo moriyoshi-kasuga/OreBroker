@@ -4,3 +4,7 @@ main: github.moriyoshi.orebroker.OreBroker
 description: 鉱石売って大金持ちになれ!
 api: "1.21.8"
 api-version: "1.21.8"
+commands:
+  orebroker:
+    description: "OreBroker command"
+    usage: "/orebroker help"

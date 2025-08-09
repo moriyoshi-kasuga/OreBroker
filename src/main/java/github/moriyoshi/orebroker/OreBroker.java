@@ -5,7 +5,9 @@ import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import github.moriyoshi.orebroker.command.OreBrokerCommand;
 import lombok.Getter;
+import lombok.val;
 
 public class OreBroker extends JavaPlugin {
     @Getter
@@ -14,6 +16,7 @@ public class OreBroker extends JavaPlugin {
     @Override
     public void onEnable() {
         initWorld();
+        initCommand();
 
         OreBroker.instance = this;
     }
@@ -21,6 +24,13 @@ public class OreBroker extends JavaPlugin {
     @Override
     public void onDisable() {
 
+    }
+
+    private void initCommand() {
+        val orebroker = new OreBrokerCommand(this);
+        val orebrokerCommand = this.getCommand("orebroker");
+        orebrokerCommand.setTabCompleter(orebroker);
+        orebrokerCommand.setExecutor(orebroker);
     }
 
     private void initWorld() {

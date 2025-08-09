@@ -5,10 +5,17 @@ import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import lombok.Getter;
+
 public class OreBroker extends JavaPlugin {
+    @Getter
+    private static OreBroker instance;
+
     @Override
     public void onEnable() {
         initWorld();
+
+        OreBroker.instance = this;
     }
 
     @Override

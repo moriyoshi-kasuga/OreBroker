@@ -106,6 +106,7 @@ public class ScoreboardManager implements Listener {
 
     private Component formatOrePrice(MarketEngine.Ore ore, int price) {
         String display = StringUtils.rightPad(ore.display, 5, '　');
+        // TODO: ただの半角スペースだとサイズがすこし違うから0にしてる。いつか修正したい
         String priceString = StringUtils.leftPad(String.valueOf(price), 3, '0');
         return BukkitUtil.mm("<white>" + display + " <yellow>" + priceString + "G");
     }

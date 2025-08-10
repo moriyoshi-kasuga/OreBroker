@@ -327,43 +327,6 @@ public final class MarketEngine {
         public final int jumpUpMin, jumpUpMax, jumpDnMin, jumpDnMax;
         public final double pRevolution; // 石炭専用
 
-        private static final Map<Material, Ore> MATERIAL_MAP = new HashMap<>();
-
-        static {
-            for (Ore ore : values()) {
-                MATERIAL_MAP.put(ore.material, ore);
-                // Deepslate variants
-                switch (ore.material) {
-                    case COAL:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_COAL_ORE, ore);
-                        break;
-                    case COPPER_INGOT:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_COPPER_ORE, ore);
-                        break;
-                    case IRON_INGOT:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_IRON_ORE, ore);
-                        break;
-                    case GOLD_INGOT:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_GOLD_ORE, ore);
-                        break;
-                    case REDSTONE:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_REDSTONE_ORE, ore);
-                        break;
-                    case LAPIS_LAZULI:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_LAPIS_ORE, ore);
-                        break;
-                    case DIAMOND:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_DIAMOND_ORE, ore);
-                        break;
-                    case EMERALD:
-                        MATERIAL_MAP.put(Material.DEEPSLATE_EMERALD_ORE, ore);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-
         Ore(String display, Material material, int pMin, int pMax, int mu, double kappa, double sigma,
                 double pJumpUp, int jumpUpMin, int jumpUpMax,
                 double pJumpDown, int jumpDnMin, int jumpDnMax,
@@ -391,10 +354,6 @@ public final class MarketEngine {
             val item = new ItemStack(this.material);
             item.setAmount(amount);
             return item;
-        }
-
-        public static Optional<Ore> fromMaterial(Material material) {
-            return Optional.ofNullable(MATERIAL_MAP.get(material));
         }
     }
 

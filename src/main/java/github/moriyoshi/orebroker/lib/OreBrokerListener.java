@@ -64,13 +64,21 @@ public final class OreBrokerListener implements Listener {
         }
 
         val material = event.getBlock().getType();
-        val oreOpt = MarketEngine.Ore.fromMaterial(material);
-
-        if (oreOpt.isEmpty()) {
+        val ore = switch (material) {
+            case COAL_ORE, DEEPSLATE_COAL_ORE -> MarketEngine.Ore.COAL;
+            case COPPER_ORE, DEEPSLATE_COPPER_ORE -> MarketEngine.Ore.COPPER;
+            case IRON_ORE, DEEPSLATE_IRON_ORE -> MarketEngine.Ore.IRON;
+            case GOLD_ORE, DEEPSLATE_GOLD_ORE -> MarketEngine.Ore.GOLD;
+            case REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE -> MarketEngine.Ore.REDSTONE;
+            case LAPIS_ORE, DEEPSLATE_LAPIS_ORE -> MarketEngine.Ore.LAPIS;
+            case SMALL_AMETHYST_BUD, MEDIUM_AMETHYST_BUD, LARGE_AMETHYST_BUD -> MarketEngine.Ore.AMETHYST;
+            case EMERALD_ORE, DEEPSLATE_EMERALD_ORE -> MarketEngine.Ore.EMERALD;
+            case DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE -> MarketEngine.Ore.DIAMOND;
+            default -> null;
+        };
+        if (ore == null) {
             return;
         }
-
-        val ore = oreOpt.get();
         val price = MarketEngine.getPrice(ore);
 
         if (!MarketEngine.takeMoney(player, price)) {
@@ -78,7 +86,9 @@ public final class OreBrokerListener implements Listener {
                     BukkitUtil.mm("<red>所持金が足りないため、<white>" + ore.display + "</white>を掘れませんでした。（必要: " + price + "G）"));
             event.setCancelled(true);
         } else {
+            event.setDropItems(false);
             player.sendActionBar(BukkitUtil.mm("<yellow>採掘コスト: " + price + "G"));
+            player.getInventory().addItem(ore.toItemStack(1));
         }
     }
 

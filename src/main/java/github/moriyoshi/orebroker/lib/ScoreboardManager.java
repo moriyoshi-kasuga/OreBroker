@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -104,6 +105,8 @@ public class ScoreboardManager implements Listener {
     }
 
     private Component formatOrePrice(MarketEngine.Ore ore, int price) {
-        return BukkitUtil.mm("  <white>" + ore.display + ": <yellow>" + price + " G");
+        String display = StringUtils.rightPad(ore.display, 5, '　');
+        String priceString = StringUtils.leftPad(String.valueOf(price), 3, '0');
+        return BukkitUtil.mm("<white>" + display + " <yellow>" + priceString + "G");
     }
 }

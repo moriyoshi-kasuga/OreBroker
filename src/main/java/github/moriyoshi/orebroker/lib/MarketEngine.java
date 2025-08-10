@@ -88,7 +88,7 @@ public final class MarketEngine {
 
     // 天変地異パラメータ
     private static final double P_DISASTER_PER_TICK = 1.0 / 60.0; // だいたい120秒に1回（2秒更新×60回）
-    private static final int DISASTER_DURATION_TICKS = 5; // 2秒更新×5=約10秒
+    private static final int DISASTER_DURATION_TICKS = 10; // 2秒更新×10=約20秒
     private static final double DISASTER_MIN = 0.6;
     private static final double DISASTER_MAX = 1.4;
 
@@ -310,7 +310,7 @@ public final class MarketEngine {
         EMERALD("エメラルド", Material.EMERALD, 150, 750, 625, 0.30, 35, 0.00, 0, 0, 0.010, 80, 160, 0.0),
         AMETHYST("アメジスト", Material.AMETHYST_SHARD, 10, 600, 305, 0.05, 65, 0.040, 80, 150, 0.040, 80, 150, 0.0),
         LAPIS("ラピス", Material.LAPIS_LAZULI, 50, 500, 225, 0.40, 30, 0.030, 70, 130, 0.030, 70, 130, 0.0),
-        REDSTONE("レッドストーン", Material.REDSTONE, 25, 500, 200, 0.30, 40, 0.050, 60, 120, 0.050, 60, 120, 0.0),
+        REDSTONE("赤石", Material.REDSTONE, 25, 500, 200, 0.30, 40, 0.050, 60, 120, 0.050, 60, 120, 0.0),
         GOLD("金", Material.GOLD_INGOT, 45, 200, 88, 0.35, 18, 0.030, 18, 35, 0.030, 18, 35, 0.0),
         IRON("鉄", Material.IRON_INGOT, 25, 100, 48, 0.40, 10, 0.00, 0, 0, 0.00, 0, 0, 0.0),
         COPPER("銅", Material.COPPER_INGOT, 10, 75, 35, 0.35, 12, 0.00, 0, 0, 0.00, 0, 0, 0.0),
